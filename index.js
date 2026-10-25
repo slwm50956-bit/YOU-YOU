@@ -126,7 +126,6 @@ const ConfigSchema = new mongoose.Schema({
   voicePanelImage: { type: String, default: null },
   voicePanelTitle: { type: String, default: 'الرومات الصوتية' },
 
-  // إعدادات YO
   yoEnabled: { type: Boolean, default: true },
   yoCurrencyName: { type: String, default: 'YO' },
   yoCurrencyEmoji: { type: String, default: '' },
@@ -136,10 +135,6 @@ const ConfigSchema = new mongoose.Schema({
   yoStartingBalance: { type: Number, default: 0 },
 }, { timestamps: true });
 const Config = mongoose.model('Config', ConfigSchema);
-
-// ============================================================
-// ========== Schema عملة YO ==========
-// ============================================================
 
 const YoWalletSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
@@ -751,7 +746,7 @@ function formatYo(amount, config) {
 }
 
 // ============================================================
-// ========== دوال الإيموجي ==========
+// ========== دوال الإيموجي (محدثة لدعم إيموجي السيرفرات الخارجية) ==========
 // ============================================================
 
 function isValidEmoji(emoji) {
@@ -784,6 +779,8 @@ async function isEmojiAccessible(emoji, client) {
   if (!parsed) return false;
   if (typeof parsed === 'string') return true;
   try {
+    const cached = client.emojis.cache.get(parsed.id);
+    if (cached) return true;
     const fetched = await client.emojis.fetch(parsed.id).catch(() => null);
     return !!fetched;
   } catch (e) {
@@ -797,9 +794,23 @@ async function prepareEmojiForSelect(emoji, client) {
   if (!parsed) return null;
   if (typeof parsed === 'string') return parsed;
   try {
+    const cached = client.emojis.cache.get(parsed.id);
+    if (cached) {
+      return {
+        animated: cached.animated,
+        name: cached.name,
+        id: cached.id,
+      };
+    }
     const fetched = await client.emojis.fetch(parsed.id).catch(() => null);
-    if (!fetched) return null;
-    return parsed;
+    if (fetched) {
+      return {
+        animated: fetched.animated,
+        name: fetched.name,
+        id: fetched.id,
+      };
+    }
+    return null;
   } catch (e) {
     return null;
   }
@@ -2227,7 +2238,7 @@ client.on('messageCreate', async (message) => {
             },
             {
               name: 'التذاكر',
-              value: '> `بانل` / `عرض_تذكرة`\n> `تعيين تذكرة عنوان [عنوان]`\n> `تعيين تذكرة إضافة [اسم] @رتبة :إيموجي:`\n> `تعيين تذكرة حذف [اسم]`\n> `تعيين تذكرة نص [نص]`\n> `تعيين تذكرة صورة [رابط]`\n> `تعيين تكت_لوق #روم`\n> `تعيين فئة_تكت #كاتقوري`',
+              value: '> `بانل` / `عرض_تذكرة`\n> `تعيين تذكرة عنوان [عنوان]`\n> `تعيين تذكرة إضافة [اسم] @رتبة :إيموجي:`\n> `تعيين تذكرة تعيين_ايموجي [اسم] :إيموجي:`\n> `تعيين تذكرة حذف [اسم]`\n> `تعيين تذكرة نص [نص]`\n> `تعيين تذكرة صورة [رابط]`\n> `تعيين تكت_لوق #روم`\n> `تعيين فئة_تكت #كاتقوري`',
               inline: false,
             },
             {
@@ -3357,9 +3368,7 @@ client.on('messageCreate', async (message) => {
           return;
         }
 
-        // ============================================================
-        // ========== الرتب الذاتية (مع الإيموجي) ==========
-        // ============================================================
+        // ========== الرتب الذاتية ==========
         if (sub === 'رتب') {
           const action = args[1]?.toLowerCase();
           const rest = args.slice(2);
@@ -3759,7 +3768,7 @@ client.on('messageCreate', async (message) => {
           return;
         }
 
-        // ========== التذاكر (مع الإيموجي) ==========
+        // ========== التذاكر ==========
         if (sub === 'تذكرة') {
           const settings = await getTicketSettings(guildId);
           const action = args[1]?.toLowerCase();
@@ -3939,7 +3948,7 @@ client.on('messageCreate', async (message) => {
         return;
       }
 
-      // ========== بانل التذاكر (مع الإيموجي) ==========
+      // ========== بانل التذاكر ==========
       if (cmd === 'بانل') {
         if (!(await hasPermission(message.member, guildId))) {
           sentReply = await message.reply('تحتاج صلاحية متحكم.');
@@ -3987,7 +3996,7 @@ client.on('messageCreate', async (message) => {
         return;
       }
 
-      // ========== عرض التذكرة (مع الإيموجي) ==========
+      // ========== عرض التذكرة ==========
       if (cmd === 'عرض_تذكرة') {
         const settings = await getTicketSettings(guildId);
         const category = settings.categoryId ? message.guild.channels.cache.get(settings.categoryId) : null;
@@ -4729,7 +4738,7 @@ client.on('messageCreate', async (message) => {
 client.on('interactionCreate', async (interaction) => {
   try {
     // ============================================================
-    // ========== Voice Master — الأزرار ==========
+    // ========== Voice Master — الأزرار ============
     // ============================================================
 
     if (interaction.isButton() && interaction.customId === 'vc_rename') {
