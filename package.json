@@ -1,29 +1,15 @@
 {
   "name": "kingdom-bot",
-  "version": "3.1.0",
-  "description": "KINGDOM BOT — Royal Crimson Edition v3.1 + Voice Master",
+  "version": "3.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js"
-  },
-  "keywords": [
-    "discord",
-    "discord-bot",
-    "discord.js",
-    "voice-master",
-    "arabic-bot"
-  ],
-  "author": "Kingdom",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
+    "start": "node index.js"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.52",
     "discord.js": "^14.14.1",
+    "@napi-rs/canvas": "^0.1.44",
     "express": "^4.18.2",
-    "instagram-url-direct": "^1.0.20",
-    "mongoose": "^8.0.3"
+    "mongoose": "^8.0.0",
+    "instagram-url-direct": "^1.0.16"
   }
 }
